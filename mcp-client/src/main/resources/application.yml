@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: mcp-client
+  profiles:
+    active: dev
+  ai:
+    embedding:
+      transformer:
+        onnx:
+          modelUri: classpath:/onnx/all-MiniLM-L6-v2/model.onnx
+          modelOutputName: last_hidden_state
+        tokenizer:
+          uri: classpath:/onnx/all-MiniLM-L6-v2/tokenizer.json
+
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      base-url: ${OPENAI_BASE_URL}
+      chat:
+        options:
+          model: ${OPENAI_MODEL}
+#    embedding:
+#      transformer:
+#        cache:
+#          directory: classpath:onnx/all-MiniLM-L6-v2/model.onnx
+#          enabled: true
+
+#    mcp:
+#      client:
+#        enabled: true
+#        name: spring-ai-mcp-client
