@@ -2,6 +2,7 @@ package com.itzixi.service;
 
 
 import com.itzixi.bean.ChatEntity;
+import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -25,4 +26,5 @@ public interface ChatService {
 
     void doChat(ChatEntity chatEntity);
 
+    void doChatRagSearch(ChatEntity chatEntity, List<Document> list);
 }

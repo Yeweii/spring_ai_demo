@@ -2,4 +2,4 @@ server:
   port: 9090
 
 website:
-  domain: http://10.30.70.149:5501
+  domain: http://192.168.31.156:5501
