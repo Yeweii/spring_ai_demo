@@ -4,9 +4,12 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.json.JSONUtil;
 import com.itzixi.bean.ChatEntity;
 import com.itzixi.bean.ChatResponseEntity;
+import com.itzixi.bean.SearchResult;
 import com.itzixi.enums.SSEMsgType;
 import com.itzixi.service.ChatService;
+import com.itzixi.service.SesrXngService;
 import com.itzixi.utils.SSEServer;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.ai.chat.client.ChatClient;
@@ -23,6 +26,10 @@ import static com.itzixi.utils.SSEServer.sendEmitterMessage;
 @Service
 @Slf4j
 public class ChatServiceImpl implements ChatService {
+
+
+    @Resource
+    private SesrXngService sesrXngService;
 
     private String systemPrompt =
             """
@@ -96,6 +103,74 @@ public class ChatServiceImpl implements ChatService {
         SSEServer.sendMsg(userId, JSONUtil.toJsonStr(chatResponseEntity), SSEMsgType.FINISH);
 
 
+    }
+
+    /**
+     * 基于searxng的实时联网搜索
+     *
+     * @param chatEntity
+     */
+    @Override
+    public void doInternetSearch(ChatEntity chatEntity) {
+
+
+        String userId = chatEntity.getCurrentUserName();
+        String question = chatEntity.getMessage();
+        String botMsgId = chatEntity.getBotMsgId();
+
+        List<SearchResult> searchResults = sesrXngService.search(question);
+
+        String finalPrompt = bulidSesrXngPromt(question, searchResults);
+
+        // 组装提示词
+        Prompt prompt = new Prompt(finalPrompt);
+
+        System.out.println(prompt.toString());
+
+        Flux<String> contentFlux = chatClient.prompt(prompt).stream().content();
+
+        List<String> list = contentFlux.toStream().map(content -> {
+            log.info("content: {}", content);
+            // 处理消息，例如发送到SSE
+            SSEServer.sendMsg(userId, content, SSEMsgType.ADD);
+            return content;
+        }).collect(Collectors.toList());
+
+        String fullContent = list.stream().collect(Collectors.joining());
+
+        ChatResponseEntity chatResponseEntity = new ChatResponseEntity(fullContent, botMsgId);
+
+        SSEServer.sendMsg(userId, JSONUtil.toJsonStr(chatResponseEntity), SSEMsgType.FINISH);
+
+
+    }
+
+
+    private static final String sesrXngPROMPT = """
+                                              你是一个互联网搜索大师，请基于以下互联网返回的结果作为上下文，根据你的理解结合用户的提问综合后，生成并且输出专业的回答：
+                                              【上下文】
+                                              {context}
+                                              
+                                              【问题】
+                                              {question}
+                                              
+                                              【输出】
+                                              如果没有查到，请回复：不知道。
+                                              如果查到，请回复具体的内容。
+                                              """;
+    private String bulidSesrXngPromt(String question, List<SearchResult> searchResults) {
+
+
+        StringBuilder context = new StringBuilder();
+
+        searchResults.forEach(searchResult -> {
+            context.append(String.format("<context>\n[来源] %s \n [摘要] %s \n </context>\n",
+                    searchResult.getUrl(),
+                    searchResult.getContent()));
+        });
+
+        return sesrXngPROMPT.replace("{context}", context)
+                .replace("{question}", question);
     }
 
 

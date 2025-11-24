@@ -27,4 +27,10 @@ public interface ChatService {
     void doChat(ChatEntity chatEntity);
 
     void doChatRagSearch(ChatEntity chatEntity, List<Document> list);
+
+    /**
+     * 基于searxng的实时联网搜索
+     * @param chatEntity
+     */
+    void doInternetSearch(ChatEntity chatEntity);
 }

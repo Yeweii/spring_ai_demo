@@ -38,3 +38,10 @@ spring:
 #      client:
 #        enabled: true
 #        name: spring-ai-mcp-client
+
+
+internet:
+  websearch:
+    searxng:
+      url: http://localhost:6080/search
+      counts: 10

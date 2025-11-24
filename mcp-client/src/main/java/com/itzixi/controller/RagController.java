@@ -33,7 +33,6 @@ public class RagController {
         List<Document> documents = documentService.doSearch(question);
         return Result.ok(documents);
     }
-
     @PostMapping("/search")
     public void search(@RequestBody ChatEntity chatEntity, HttpServletResponse response) {
 
